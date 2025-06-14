@@ -1,0 +1,183 @@
+import pygame
+import time
+pygame.font.init()
+
+# Initialize window
+screen = pygame.display.set_mode((500, 600))
+pygame.display.set_caption("SUDOKU SOLVER USING BACKTRACKING")
+
+# Colors
+WHITE = (255, 255, 255)
+CYAN = (0, 153, 153)
+RED = (255, 0, 0)
+BLACK = (0, 0, 0)
+GREY = (200, 200, 200)
+
+# Dimensions
+dif = 500 / 9
+
+solved = False
+solved_time = 0
+
+# Solvable Grid
+grid = [
+    [3, 7, 0, 1, 4, 0, 9, 6, 0],
+    [0, 2, 9, 6, 7, 3, 1, 0, 0],
+    [0, 0, 0, 0, 9, 0, 0, 7, 4],
+    [0, 0, 2, 5, 0, 0, 0, 0, 0],
+    [7, 4, 0, 0, 0, 0, 0, 0, 8],
+    [1, 0, 0, 0, 2, 0, 7, 0, 0],
+    [9, 0, 0, 7, 6, 2, 0, 3, 1],
+    [0, 5, 7, 3, 0, 1, 6, 0, 9],
+    [6, 1, 0, 0, 0, 0, 0, 0, 7]
+]
+
+# Fonts
+font1 = pygame.font.SysFont("comicsans", 40)
+font2 = pygame.font.SysFont("comicsans", 20)
+font_button = pygame.font.SysFont("comicsans", 25)
+
+# Globals
+x = y = val = 0
+error_count = 0
+start_time = time.time()
+
+# Button area
+solve_btn_rect = pygame.Rect(180, 540, 140, 40)
+
+def get_cord(pos):
+    global x, y
+    x = int(pos[0] // dif)
+    y = int(pos[1] // dif)
+
+def draw_box():
+    pygame.draw.rect(screen, RED, (x*dif, y*dif, dif, dif), 3)
+
+def draw():
+    screen.fill(WHITE)
+
+    for i in range(9):
+        for j in range(9):
+            num = grid[j][i]
+            if num != 0:
+                pygame.draw.rect(screen, CYAN, (i*dif, j*dif, dif, dif))
+                text = font1.render(str(num), True, BLACK)
+                text_rect = text.get_rect(center=(i*dif + dif/2, j*dif + dif/2))
+                screen.blit(text, text_rect)
+
+    for i in range(10):
+        thickness = 4 if i % 3 == 0 else 1
+        pygame.draw.line(screen, BLACK, (0, i * dif), (500, i * dif), thickness)
+        pygame.draw.line(screen, BLACK, (i * dif, 0), (i * dif, 500), thickness)
+
+    draw_box()
+    show_timer()
+    show_errors()
+    draw_button()
+
+def draw_button():
+    pygame.draw.rect(screen, GREY, solve_btn_rect)
+    pygame.draw.rect(screen, BLACK, solve_btn_rect, 2)
+    text = font_button.render("Auto Solve", True, BLACK)
+    text_rect = text.get_rect(center=solve_btn_rect.center)
+    screen.blit(text, text_rect)
+
+def raise_error():
+    global error_count
+    error_count += 1
+
+def show_timer():
+    if solved:
+        elapsed = int(solved_time - start_time)
+    else:
+        elapsed = int(time.time() - start_time)
+    minutes = elapsed // 60
+    seconds = elapsed % 60
+    timer_text = font2.render(f"Time: {minutes:02d}:{seconds:02d}", True, BLACK)
+    screen.blit(timer_text, (20, 510))
+
+
+def show_errors():
+    error_text = font2.render(f"Errors: {error_count}", True, RED)
+    screen.blit(error_text, (375, 510))
+
+def valid(m, row, col, num):
+    for i in range(9):
+        if m[row][i] == num or m[i][col] == num:
+            return False
+    x0, y0 = (row // 3) * 3, (col // 3) * 3
+    for i in range(x0, x0 + 3):
+        for j in range(y0, y0 + 3):
+            if m[i][j] == num:
+                return False
+    return True
+
+def solve(m, i=0, j=0):
+    global solved, solved_time
+    if i == 9:
+        solved = True
+        solved_time = time.time()
+        return True
+    ni, nj = (i + (j + 1) // 9, (j + 1) % 9)
+    if m[i][j] != 0:
+        return solve(m, ni, nj)
+    for num in range(1, 10):
+        if valid(m, i, j, num):
+            m[i][j] = num
+            draw()
+            pygame.display.update()
+            pygame.time.delay(20)
+            if solve(m, ni, nj):
+                return True
+            m[i][j] = 0
+    return False
+
+
+# Main Loop
+run = True
+while run:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            pos = pygame.mouse.get_pos()
+            if solve_btn_rect.collidepoint(pos):
+                solve(grid)
+            else:
+                get_cord(pos)
+
+        if event.type == pygame.KEYDOWN:
+            if event.key in [pygame.K_1, pygame.K_KP1]: val = 1
+            elif event.key in [pygame.K_2, pygame.K_KP2]: val = 2
+            elif event.key in [pygame.K_3, pygame.K_KP3]: val = 3
+            elif event.key in [pygame.K_4, pygame.K_KP4]: val = 4
+            elif event.key in [pygame.K_5, pygame.K_KP5]: val = 5
+            elif event.key in [pygame.K_6, pygame.K_KP6]: val = 6
+            elif event.key in [pygame.K_7, pygame.K_KP7]: val = 7
+            elif event.key in [pygame.K_8, pygame.K_KP8]: val = 8
+            elif event.key in [pygame.K_9, pygame.K_KP9]: val = 9
+            elif event.key == pygame.K_RETURN:
+                solve(grid)
+            elif event.key in [pygame.K_DELETE, pygame.K_BACKSPACE]:
+                grid[y][x] = 0
+
+            if val != 0:
+                if grid[y][x] == 0:
+                    if valid(grid, y, x, val):
+                        temp = grid[y][x]
+                        grid[y][x] = val
+                        copy_grid = [row[:] for row in grid]
+                        if solve(copy_grid):
+                            pass
+                        else:
+                            grid[y][x] = temp
+                            raise_error()
+                    else:
+                        raise_error()
+                val = 0
+
+    draw()
+    pygame.display.update()
+
+pygame.quit()
