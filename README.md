@@ -8,6 +8,7 @@ This project is a visual Sudoku solver built with Python and Pygame. It allows t
 ✅ Error counter for invalid moves
 ✅ Timer that stops once the puzzle is solved
 ✅ Clean and user-friendly UI
+
 🧮 How It Works
 The backtracking algorithm tries all possible numbers in empty cells.
 If the number is valid (does not repeat in row, column, or box), it proceeds.
